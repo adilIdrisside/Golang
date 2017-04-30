@@ -3,26 +3,26 @@ package main
 import (
 	"compress/gzip"   // pour compresser les fichiers
 	"fmt"             // pour print
-	"io/ioutil"       // pour lire un fichier
+	"io/ioutil"	  // pour lire un fichier
 	"os"              // pour créer, ouvrir, fermer les fichiers
-	"strings"	  // pour les chaines de caractères
-	"math"		  // pour calculer la racine carrée
-	"strconv"	  // pour convertir une chaine de caractères en nombre (ASCII)
+	"strings"  	  // pour les chaines de caractères
+	"math"	      	  // pour calculer la racine carrée
+	"strconv          // pour convertir une chaine de caractères en nombre (ASCII)
 )
 
 func openFile(fileToOpen string) (*os.File, error) {
-    return os.OpenFile(fileToOpen, openFileOptions, openFilePermissions)
+	return os.OpenFile(fileToOpen, openFileOptions, openFilePermissions)
 }
 
 func closeFile(handle *os.File) {
-    if handle == nil {
-        return
-    }
+    	if handle == nil {
+        	return
+    	}
 
-    err := handle.Close()
-    if err != nil {
-        fmt.Println("[ERROR] Closing file:", err)
-    }
+    	err := handle.Close()
+    	if err != nil {
+        	fmt.Println("[ERROR] Closing file:", err)
+    	}
 }
 
 const openFileOptions int = os.O_CREATE | os.O_RDWR
@@ -37,15 +37,18 @@ var fnaNames = []string{"Bacillus_subtilis", "Bacillus_amyloliquefaciens_FZB42",
 
 var fnaReferences = []string{"NC_000913.fna", "NC_000964.fna", "NC_002662.fna", "NC_003997.fna", "NC_006322.fna",
 			     "NC_009428.fna", "NC_009725.fna", "NC_009848.fna", "NC_011770.fna", "NC_012472.fna",
-			     "NC_012803.fna", "NC_014171.fna", "NC_014639.fna", "NC_015634.fna", "NC_016114.fna"}
+     	        	     "NC_012803.fna", "NC_014171.fna", "NC_014639.fna", "NC_015634.fna", "NC_016114.fna"}
 
 var R_clustering = []string{"NC_000964", "NC_009725", "NC_009848", "NC_014171", "NC_012472",
-			    "NC_003997", "NC_015634", "NC_014639", "NC_006322", "NC_000913", 
+  			    "NC_003997", "NC_015634", "NC_014639", "NC_006322", "NC_000913", 
 			    "NC_011770", "NC_009428", "NC_016114", "NC_012803", "NC_002662"}
 
 func append(a string, b string){
+	// Rajouter le nom du répertoire fnaFiles dans le chemin pour pouvoir lire le fichier
 	file1,_:=ioutil.ReadFile("fnaFiles/"+a)
 	file2,_:=ioutil.ReadFile("fnaFiles/"+b)
+	
+	// Convertire en une chaîne de caractères
 	s1 := string(file1)
 	s2 := string(file2)
 	s3 := s1 + s2
@@ -63,12 +66,12 @@ func compress(fnaFilePath string, archivesPath string, fna string) float64 {
     
 	if err != nil {
         	fmt.Println("[ERROR] Opening file:", err)
-    	}	
+    	}
 
-	zipWriter, err := gzip.NewWriterLevel(handle, 9)
-	if err != nil {
+    	zipWriter, err := gzip.NewWriterLevel(handle, 9)
+    	if err != nil {
         	fmt.Println("[ERROR] New gzip writer:", err)
-    	}	
+    	}
     	file2, _ := ioutil.ReadFile(fnaFilePath+fna)
     	numberOfBytesWritten, err := zipWriter.Write([]byte(file2))
     	if err != nil {
@@ -221,9 +224,11 @@ func main() {
 	fmt.Println("\n\n Creating New Directory for Archived FNA Files....")
 	os.Mkdir("archives",0777)
 	
+	// Déplacer les 15 fichiers fna dans le répertoire fnaFiles
 	for i := 0; i < nbFiles; i++ {
 		os.Rename(fnaReferences[i], "fnaFiles/"+fnaReferences[i])
 	}
+	
 	
 	fmt.Println("\n\n Reading FNA Files....")
 	dirScan, _ := ioutil.ReadDir("fnaFiles/")
@@ -231,29 +236,32 @@ func main() {
  	for i, file := range dirScan {
 		fnaFiles[i]=file.Name()
 	}
-	
+	// Concaténation
 	fmt.Printf("\n\n Appending....")
 	for k := 0; k < nbFiles; k++ {
 		append(fnaFiles[k],fnaFiles[k])
 	}
-	fmt.Printf("Done!\n\n")
-	
+		
 	for i := 0; i < nbFiles; i++ {
 		for j := i+1; j < nbFiles; j++ {
 			append(fnaFiles[i],fnaFiles[j])
 		}
 	}
+	fmt.Printf("Done!\n\n")
 	
+	fmt.Println("\n\n Reading Appended Files....")
 	dirScan1, _ := ioutil.ReadDir("append/")
 		
 	for i, file := range dirScan1 {
 		appendedFnaFiles[i]=file.Name()
 	}
+	fmt.Printf("Done!\n\n")
 	
 	for i := 0; i < 120; i++ {
 		fmt.Println(appendedFnaFiles[i])
 	}
 	
+	// Compression
 	fmt.Println("\n\n Compressing....")
 	for i := 0; i < nbFiles; i++ {
 		tab[i]=compress("fnaFiles/","archives/",fnaFiles[i])
@@ -264,13 +272,16 @@ func main() {
 	}
 	fmt.Printf("\nDone!\n\n")
 	
+	fmt.Println("\n Reading Archives....")
 	dirScan2, _ := ioutil.ReadDir("archives/")
 		
 	for i, file := range dirScan2 {
 		gzFiles[i]=file.Name()
 		fmt.Println(file.Name())
 	}
+	fmt.Printf("\nDone!\n\n")
 	
+	// Mettre dans le tableau tab les noms des archives
 	for i := 0; i < 135; i++ {
 		tab[i]=size("archives/"+gzFiles[i])
 	}
@@ -289,6 +300,7 @@ func main() {
 	increment_j = 0
 	increment = nbFiles+1
 	
+	// Calcul de la distance: il faut faire attention lorsqu'on met les indices des archives, pour qu'on aura des résultats cohérents
 	for i := 0; i < nbFiles; i++ {
 		
 		ij = increment_i+1
@@ -310,10 +322,12 @@ func main() {
 		increment--
 	}
 	
+	// Sauvegarder la matrice des distances dans un fichier pour le passer en paramètre à Njplot pour afficher l'arbre
 	fmt.Println("\n\n Saving distances....")
 	distanceFileFillIn(distMatrix)
 	fmt.Printf("\nDone!\n\n")
 	
+	// Calcul du dendrogramme
 	fmt.Println("\n\n Single Linkage Algorithm\n\n")
 	singleLinkage(distMatrix)
 	fmt.Printf("\nDone!\n\n")
